@@ -47,12 +47,14 @@ UNET_SEP: bool = False
 # Gelsight Mini.
 NORM_IMG: Optional[Tuple[Tensor, Tensor]] = (Tensor([0.4907543957, 0.4985137582, 0.4685586393]),
                                              Tensor([0.0307641067, 0.0246135872, 0.0398434214]))    # (mean, std).
-NORM_LBL: Optional[Tuple[Tensor, Tensor]] = (Tensor([-6.0596092226e-05]), Tensor([0.0002053244]))   # (mean, std).
+NORM_DIS: Optional[Tuple[Tensor, Tensor]] = (Tensor([-6.0596092226e-05]), Tensor([0.0002053244]))   # (mean, std).
+print ("USING GELSIGHT NORMALIZATION")
 # Digit.
 '''
 NORM_IMG: Optional[Tuple[Tensor, Tensor]] = (Tensor([0.5024564266, 0.4860377908, 0.5020657778]),
                                              Tensor([0.0415902548, 0.0462468602, 0.0575232506]))  # (mean, std).
-NORM_LBL: Optional[Tuple[Tensor, Tensor]] = (Tensor([-0.0001196197]), Tensor([0.0003911761]))     # (mean, std).
+NORM_DIS: Optional[Tuple[Tensor, Tensor]] = (Tensor([-0.0001196197]), Tensor([0.0003911761]))     # (mean, std).
+print ("USING DIGIT NORMALIZATION")
 '''
 
 
