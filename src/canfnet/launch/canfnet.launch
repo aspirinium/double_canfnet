@@ -15,7 +15,6 @@
             name="visuotactile_sensor_node"
             output="screen">
         <param name="tactile_device" type="string" value="$(arg tactile_device)"/>
-        <param name="tactile_device_path" type="string" value="$(arg tactile_device_path)"/>
         <param name="tactile_cam_undistort" type="bool" value="$(arg tactile_cam_undistort)"/>
     </node>
 

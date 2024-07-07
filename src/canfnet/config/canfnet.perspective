@@ -65,7 +65,7 @@
                   "type": "repr"
                 },
                 "mouse_pub_topic": {
-                  "repr": "'/canfnet/visuotactile_image_mouse_left'",
+                  "repr": "'/canfnet/visuotactile_image0_mouse_left'",
                   "type": "repr"
                 },
                 "num_gridlines": {
@@ -89,7 +89,7 @@
                   "type": "repr"
                 },
                 "topic": {
-                  "repr": "'/canfnet/visuotactile_image'",
+                  "repr": "'/canfnet/visuotactile_image0'",
                   "type": "repr"
                 },
                 "zoom1": {
@@ -132,7 +132,7 @@
                   "type": "repr"
                 },
                 "mouse_pub_topic": {
-                  "repr": "'/canfnet/unet_estimation_image_mouse_left'",
+                  "repr": "'/canfnet/unet_estimation_image0_mouse_left'",
                   "type": "repr"
                 },
                 "num_gridlines": {
@@ -156,7 +156,7 @@
                   "type": "repr"
                 },
                 "topic": {
-                  "repr": "'/canfnet/unet_estimation_image'",
+                  "repr": "'/canfnet/unet_estimation_image0'",
                   "type": "repr"
                 },
                 "zoom1": {
@@ -199,7 +199,7 @@
                   "type": "repr"
                 },
                 "topics": {
-                  "repr": "'/canfnet/unet_estimation/force'",
+                  "repr": "'/canfnet/unet_estimation0/force'",
                   "type": "repr"
                 },
                 "x_limits": {

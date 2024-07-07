@@ -12,7 +12,7 @@ import numpy as np
 from pathlib import Path
 from digit_interface import Digit
 from typing import Optional, Union, Dict, Tuple
-
+import ffmpegcv
 from canfnet.utils.utils import PrintColors, load_yaml
 
 
@@ -27,7 +27,7 @@ class VistacInterface:
     """
 
     def __init__(self, device_name: Union[TactileDevice, str],
-                 device_path: Optional[str] = '/dev/video0',
+                 device_id: int,
                  undistort_image: Optional[Union[Path, str]] = None) -> None:
         """
         Initializer.
@@ -42,7 +42,8 @@ class VistacInterface:
         self.cam_params_dict: Optional[Dict] = load_yaml(undistort_image) if undistort_image is not None else None
 
         self.device_name: Union[TactileDevice, str] = device_name
-        self.device_path: Optional[str] = device_path
+        self.device_id: int = device_id
+        #self.device_path: Optional[str] = device_path
         self._device: Optional[Union[cv2.VideoCapture, Digit]] = None
 
         self.image: Optional[np.ndarray] = None
@@ -58,7 +59,7 @@ class VistacInterface:
 
         :return: None
         """
-        self._device: cv2.VideoCapture = cv2.VideoCapture(self.device_path)
+        self._device: cv2.VideoCapture = cv2.VideoCapture(self.device_id)
         if self._device is None or not self._device.isOpened():
             print(f"{PrintColors.WARNING} Failed to open camera at {self.device_path}! {PrintColors.ENDC}")
 
@@ -123,7 +124,7 @@ class DIGIT(VistacInterface):
 
 
 class GelSightMini(VistacInterface):
-    def __init__(self, device_path: Optional[str] = '/dev/video0', undistort_image: bool = True) -> None:
+    def __init__(self, device_id: int, undistort_image: bool = True) -> None:
         """
         Initializer.
 
@@ -132,10 +133,10 @@ class GelSightMini(VistacInterface):
         :return: None
         """
         if undistort_image:
-            super().__init__(TactileDevice.GELSIGHTMINI, device_path, Path(Path(__file__).parent.resolve(), 'params',
+            super().__init__(TactileDevice.GELSIGHTMINI, device_id, Path(Path(__file__).parent.resolve(), 'params',
                                                                            'cam_params_gelsightmini.yaml'))
         else:
-            super().__init__(TactileDevice.GELSIGHTMINI, device_path, None)
+            super().__init__(TactileDevice.GELSIGHTMINI, device_id, None)
 
         self.image_dim = (320, 240)
 
@@ -150,7 +151,7 @@ class GelSightMini(VistacInterface):
         if ret:
             self.image = self.preprocess(self.image)
         else:
-            print(f"{PrintColors.FAIL} Failed to capture image at {self.device_path}! {PrintColors.ENDC}")
+            print(f"{PrintColors.FAIL} Failed to capture image at! {PrintColors.ENDC}")
 
         return cv2.cvtColor(self.image, cv2.COLOR_BGR2RGB)
 

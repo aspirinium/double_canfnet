@@ -21,12 +21,27 @@ from torch import device, Tensor
 import canfnet.unet.predict as unet
 from canfnet.msg import UNetEstimation
 from canfnet.unet.unet import UNet
+import threading
+from functools import partial
+from ffmpegcv.ffmpeg_reader_camera import query_camera_devices
+import torch
+
+def get_camera_ids():
+    devices = query_camera_devices()
+    camera_ids = list(devices.keys())
+    ids = []
+    for id in camera_ids:
+        name = devices[id][0]
+        if "GelSight Mini" in name:
+            print(f"Found GelSight Mini: {devices[id]}, id: {id}")
+            ids.append(id)
+    return ids
 
 FILE_DIR: Path = Path(__file__).parent.parent.resolve()
 MODEL_PATH = rospy.get_param('/canfnet_node/model', Path(FILE_DIR, 'models', 'GelSightMini',
                                                          'model_23-02-2023_16-49-19_256_gelsight_mini.pth'))
 VISTAC_DEVICE: str = rospy.get_param('/canfnet_node/tactile_device', 'GelSightMini')
-TORCH_DEVICE: device = rospy.get_param('/canfnet_node/torch_device', device('cuda'))
+TORCH_DEVICE: device = torch.cuda.set_device(0)
 CANFNET_FORCE_FILT: bool = rospy.get_param('/canfnet_node/canfnet_force_filt', True)
 UNET: UNet
 
@@ -52,7 +67,7 @@ def decode_compressed_image(image: CompressedImage) -> np.ndarray:
     return cv2.imdecode(np.frombuffer(image.data, np.uint8), cv2.IMREAD_COLOR)
 
 
-def publish_canfnet_estimation(image: Union[Image, CompressedImage]) -> None:
+def publish_canfnet_estimation(image: Union[Image, CompressedImage], id) -> None:
     """
     Callback function for estimating the normal force and its distribution from visuotactile images and publishing
     both together with an RGB color image of the normal force distribution.
@@ -61,8 +76,8 @@ def publish_canfnet_estimation(image: Union[Image, CompressedImage]) -> None:
     :return: None
     """
     bridge: CvBridge = CvBridge()
-    pub: rospy.Publisher = rospy.Publisher('/canfnet/unet_estimation', numpy_msg(UNetEstimation), queue_size=25)
-    pub_img: rospy.Publisher = rospy.Publisher('/canfnet/unet_estimation_image', Image, queue_size=25)
+    pub: rospy.Publisher = rospy.Publisher(f'/canfnet/unet_estimation{id}', numpy_msg(UNetEstimation), queue_size=1)
+    pub_img: rospy.Publisher = rospy.Publisher(f'/canfnet/unet_estimation_image{id}', Image, queue_size=1)
     unet_est: UNetEstimation = numpy_msg(UNetEstimation)()
 
     if isinstance(image, CompressedImage):
@@ -75,11 +90,12 @@ def publish_canfnet_estimation(image: Union[Image, CompressedImage]) -> None:
 
     force, f_dis = unet.predict(image, UNET, TORCH_DEVICE, norm_img=NORM_IMG,
                                 norm_dis=NORM_DIS, force_filter=CANFNET_FORCE_FILT)
+    
     unet_est.force = force
     unet_est.force_dis = f_dis.reshape(f_dis.shape[0] * f_dis.shape[1])
     unet_est.header.stamp = rospy.Time.now()
     unet_est.header.seq += 1
-    unet_est.header.frame_id = 'visuotactile_sensor'
+    unet_est.header.frame_id = f'visuotactile_sensor{id}'
 
     # Convert the force distribution to a color image for display.
     norm = mpl.colors.Normalize(vmin=-0.00075, vmax=-0.00012)
@@ -93,7 +109,7 @@ def publish_canfnet_estimation(image: Union[Image, CompressedImage]) -> None:
     pub_img.publish(f_dis_img)
 
 
-def vistac_listener() -> None:
+def vistac_listener(id) -> None:
     """
     A listener for published visuotactile images.
 
@@ -102,11 +118,20 @@ def vistac_listener() -> None:
     global UNET
     UNET = unet.load_unet(MODEL_PATH, torch_device=TORCH_DEVICE)
 
-    rospy.init_node('unet', anonymous=True)
-    rospy.Subscriber('/canfnet/visuotactile_image', Image, publish_canfnet_estimation)
+    
+    rospy.Subscriber(f'/canfnet/visuotactile_image{id}', Image, publish_canfnet_estimation, callback_args=id)
 
     rospy.spin()
 
 
 if __name__ == '__main__':
-    vistac_listener()
+    ids = get_camera_ids()
+    rospy.init_node('unet', anonymous=True)
+    threads = []
+    for id in ids:
+        t = threading.Thread(target=vistac_listener, args=(id,))
+        t.start()
+        threads.append(t)
+
+    for t in threads:
+        t.join()
